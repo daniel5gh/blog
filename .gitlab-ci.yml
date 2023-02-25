@@ -5,7 +5,7 @@ variables:
   LC_ALL: C.UTF-8
 
 build:
-  stage: deploy
+  stage: build
   script:
     - gem install bundler
     - bundle install
