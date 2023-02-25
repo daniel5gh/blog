@@ -16,7 +16,8 @@ test:
     paths:
       - test
   rules:
-    - if: $CI_COMMIT_BRANCH != $CI_DEFAULT_BRANCH || $CI_COMMIT_TAG
+    - if: $CI_COMMIT_BRANCH != $CI_DEFAULT_BRANCH
+    - if: $CI_COMMIT_TAG
 
 build:
   stage: deploy
@@ -26,7 +27,8 @@ build:
     paths:
       - blog
   rules:
-    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH || $CI_COMMIT_TAG
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+    - if: $CI_COMMIT_TAG
 
 release_job:
   stage: deploy
