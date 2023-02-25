@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html>
+
+  <head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width initial-scale=1">
+
+  <title>Remote Python with PyCharm/IntelliJ</title>
+  <meta name="description" content="Introduction">
+
+  <link rel="stylesheet" href="/blog/css/main.css">
+  <link rel="canonical" href="http://spiet.nl/blog/python/remote/ide/2015/04/13/remote-python-ide.html">
+  <link rel="alternate" type="application/atom+xml" title="Daniël's lab." href="http://spiet.nl/blog/feed.xml" />
+</head>
+
+
+  <body>
+
+    <header class="site-header">
+
+  <div class="wrapper">
+
+    <a class="site-title" href="/blog/">Daniël's lab.</a>
+
+    <nav class="site-nav">
+      <a href="#" class="menu-icon">
+        <svg viewBox="0 0 18 15">
+          <path fill="#424242" d="M18,1.484c0,0.82-0.665,1.484-1.484,1.484H1.484C0.665,2.969,0,2.304,0,1.484l0,0C0,0.665,0.665,0,1.484,0 h15.031C17.335,0,18,0.665,18,1.484L18,1.484z"/>
+          <path fill="#424242" d="M18,7.516C18,8.335,17.335,9,16.516,9H1.484C0.665,9,0,8.335,0,7.516l0,0c0-0.82,0.665-1.484,1.484-1.484 h15.031C17.335,6.031,18,6.696,18,7.516L18,7.516z"/>
+          <path fill="#424242" d="M18,13.516C18,14.335,17.335,15,16.516,15H1.484C0.665,15,0,14.335,0,13.516l0,0 c0-0.82,0.665-1.484,1.484-1.484h15.031C17.335,12.031,18,12.696,18,13.516L18,13.516z"/>
+        </svg>
+      </a>
+
+      <div class="trigger">
+        
+          
+          <a class="page-link" href="/blog/about/">About</a>
+          
+        
+          
+        
+          
+        
+          
+        
+      </div>
+    </nav>
+
+  </div>
+
+</header>
+
+
+    <div class="page-content">
+      <div class="wrapper">
+        <div class="post">
+
+  <header class="post-header">
+    <h1 class="post-title">Remote Python with PyCharm/IntelliJ</h1>
+    <p class="post-meta">Apr 13, 2015</p>
+  </header>
+
+  <article class="post-content">
+    <h2 id="introduction">Introduction</h2>
+
+<p>Often I create a VM specifically for one project. This way I don’t have to worry
+about messing up common dependencies between projects, such as libraries and
+services like a database and webserver.</p>
+
+<p>What I don’t like to do is to setup my personal development preferences on each
+VM, plus the VM is slower than the host so I want to run PyCharm or IntelliJ on
+my host machine, even when the host is running another OS than what we’re
+developping for. Note that the free variant of PyCharm does not support this.</p>
+
+<p>Here I will describe the typical tasks I perform to get a new project up and
+running.</p>
+
+<h3 id="install-vm-and-basic-setup">Install VM and basic setup</h3>
+
+<p>First we create a new VM with VirtualBox and install a ubuntu 14.04. First thing
+after logging on the new system is installing vim and virtualenvwrapper, press
+<code>ctrl-alt-t</code> for a terminal and a <code>sudo apt-get install vim virtualenvwrapper
+openssh-server</code>.  Need <code>vim</code> just because and <code>virtualenvwrapper</code> because we
+want to work on python stuff. We want to be able to SSH to the machine as well.</p>
+
+<p>Next I fix default locales, because I choose Netherlands as location during
+ubuntu install. I found out the hard way that PostgreSQL ubuntu debs fail on a
+postinst step where it tries to create a new cluster. But the installation
+itself does not fail! Automated deployment systems happily continue with the
+missing cluster and fail at a later stage when the database is assumed to be up
+and running.</p>
+
+<p>So fixing the locales: <code>echo 'LANG="en_US.UTF-8"' &gt; /etc/default/locales</code></p>
+
+<p>Lastly I paste my public ssh key into <code>~/.ssh/authorized_keys</code>.</p>
+
+<h3 id="creating-the-virtualenv">Creating the virtualenv</h3>
+
+<p>From this point we can operate the VM using SSH only and we can log out of the
+GUI and work from our fast host. Currently I am working on Windows and I am
+using PuTTY for SSH. I used PuTTYgen to create a SSH key pair and Pageant as the
+SSH agent that holds my keys.</p>
+
+<div class="highlight"><pre><code class="language-bash" data-lang="bash">daniel@remotepy:~<span class="nv">$ </span>mkvirtualenv remotepyenv
+New python executable in remotepyenv/bin/python
+Installing setuptools, pip...done.
+<span class="o">(</span>remotepyenv<span class="o">)</span>daniel@remotepy:~<span class="err">$</span></code></pre></div>
+
+<p>Because we used ubuntu’s <code>virtualenvwrapper</code> we have a virtualenv that has a
+too old <code>pip</code>. We want the newest one mostly because of Python Wheels support.
+Lets update it to latest:</p>
+
+<div class="highlight"><pre><code class="language-bash" data-lang="bash"><span class="o">(</span>remotepyenv<span class="o">)</span>daniel@remotepy:~<span class="nv">$ </span>pip install --upgrade pip
+Downloading/unpacking pip from https://pypi.python.org/packages/py2.py3/p/pip/pip-6.1.1-py2.py3-none-any.whl#md5<span class="o">=</span>172eb5abab25a5e0f7a7b63c7a49378d
+  Downloading pip-6.1.1-py2.py3-none-any.whl <span class="o">(</span>1.1MB<span class="o">)</span>: 1.1MB downloaded
+Installing collected packages: pip
+  Found existing installation: pip 1.5.4
+    Uninstalling pip:
+      Successfully uninstalled pip
+Successfully installed pip
+Cleaning up...</code></pre></div>
+
+<h3 id="have-the-ide-on-your-host-use-the-remotepyenv">Have the IDE on your host use the remotepyenv</h3>
+
+<p>Because Jetbrains products are just so cool we can configure IntelliJ to use a
+remote python interpreter, including all debugging and virtualenv tools like
+installing packages.  The following is based on IntelliJ, licensed PyCharm can do
+this too, but the screenshots do not match.</p>
+
+<p>Create a new project and when selecting your SDK choose <code>Add remote</code>.</p>
+
+<p><img src="/blog/images/add-remote.png" alt="Add remote SDK" title="Add remote SDK" /></p>
+
+<p>Next we get a nice dialog to setup SSH credentials and the python executable
+path. For the python path I do a <code>which python</code> on the still open putty session
+so I can copy paste the path. Like a good programmer I am lazy and let the
+computer do work for me, also less likely to give a wrong path.</p>
+
+<p><img src="/blog/images/add-remote-ssh.png" alt="Add remote SSH" title="Add remote SSH Dialog" /></p>
+
+<p>Note I chose to use the Key Pair option at auth type. I won’t think less of you
+if you choose to use passwords, I really don’t! :)</p>
+
+<p><img src="/blog/images/remote-python-connecting.png" alt="Connecting" title="Connecting" /></p>
+
+<p>Next, it’ll say something like ‘updating skeletons’, let it do its thing. This
+can take some time on remote envs that have a lot of packages installed.</p>
+
+<p>When it’s done:
+<img src="/blog/images/remote-env.png" alt="SDK" title="SDK" /></p>
+
+<p>Remote package management:
+<img src="/blog/images/remote-packages.png" alt="Packages" title="Packages" /></p>
+
+<h3 id="share-code-files-on-remote-and-local-host">Share code files on remote and local host</h3>
+
+<p>The tricky part is to have both IntelliJ and the remote python interpreter use
+the same code files. We can either share them on Windows and mount it in the VM
+or do it the other way around. Let’s share it in Windows and mount it on the
+VM. In Windows share the project folder. And mount it on the VM:</p>
+
+<div class="highlight"><pre><code class="language-bash" data-lang="bash"><span class="c"># will mount it under /run/user/1000/gvfs/smb-share\:server\=windowsbox\,share\=remotepyproject\,user\=daniel/</span>
+daniel@remotepy:~<span class="nv">$ </span>gvfs-mount smb://daniel@windowsbox/remotepyproject</code></pre></div>
+
+<p>Now in the “Run/Debug configurations” you set the script path and the working
+directory as they are on the remote host:
+<img src="/blog/images/debug-config.png" alt="Config" title="Configuration" /></p>
+
+<p>Also edit the path mappings, these will be used during debugging so IntelliJ
+knows where to find files locally.
+<img src="/blog/images/path-mappings.png" alt="Path Mappings" title="Path Mappings" /></p>
+
+<h3 id="remote-debugging">Remote Debugging</h3>
+
+<p>To do remote debugging, just launch the debug process as you normally would
+with a local interpreter, note the break on NameError and the Variables below.
+<img src="/blog/images/remote-break.png" alt="Remote break" title="Remote Break" /></p>
+
+<p>We can of course also get the IPython prompt on the remote debugged process.
+<img src="/blog/images/remote-debug-prompt.png" alt="remote-debug-prompt" title="remote-debug-prompt" /></p>
+
+<h3 id="conclusion">Conclusion</h3>
+
+<p>I don’t like the fact that I need to share the code files between the remote
+host and the local host manually. But besides that I very much like this way of
+working. It also works well if you are actually working on a remote machine to
+which you don’t have a graphical terminal to run the IDE on.</p>
+
+
+  </article>
+
+</div>
+
+      </div>
+    </div>
+
+    <footer class="site-footer">
+
+  <div class="wrapper">
+
+    <h2 class="footer-heading">Daniël's lab.</h2>
+
+    <div class="footer-col-wrapper">
+      <div class="footer-col  footer-col-1">
+        <ul class="contact-list">
+          <li>Daniël's lab.</li>
+          <li><a href="mailto:daniel5blog@spiet.nl">daniel5blog@spiet.nl</a></li>
+        </ul>
+      </div>
+
+      <div class="footer-col  footer-col-2">
+        <ul class="social-media-list">
+          
+
+          
+        </ul>
+      </div>
+
+      <div class="footer-col  footer-col-3">
+        <p class="text">Blog about all kinds of (code) experiments.
+</p>
+      </div>
+    </div>
+
+  </div>
+
+</footer>
+
+
+  </body>
+
+</html>

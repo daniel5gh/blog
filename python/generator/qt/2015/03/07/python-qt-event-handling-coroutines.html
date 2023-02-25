@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html>
+
+  <head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width initial-scale=1">
+
+  <title>Python Qt and Coroutines</title>
+  <meta name="description" content="Introduction">
+
+  <link rel="stylesheet" href="/blog/css/main.css">
+  <link rel="canonical" href="http://spiet.nl/blog/python/generator/qt/2015/03/07/python-qt-event-handling-coroutines.html">
+  <link rel="alternate" type="application/atom+xml" title="Daniël's lab." href="http://spiet.nl/blog/feed.xml" />
+</head>
+
+
+  <body>
+
+    <header class="site-header">
+
+  <div class="wrapper">
+
+    <a class="site-title" href="/blog/">Daniël's lab.</a>
+
+    <nav class="site-nav">
+      <a href="#" class="menu-icon">
+        <svg viewBox="0 0 18 15">
+          <path fill="#424242" d="M18,1.484c0,0.82-0.665,1.484-1.484,1.484H1.484C0.665,2.969,0,2.304,0,1.484l0,0C0,0.665,0.665,0,1.484,0 h15.031C17.335,0,18,0.665,18,1.484L18,1.484z"/>
+          <path fill="#424242" d="M18,7.516C18,8.335,17.335,9,16.516,9H1.484C0.665,9,0,8.335,0,7.516l0,0c0-0.82,0.665-1.484,1.484-1.484 h15.031C17.335,6.031,18,6.696,18,7.516L18,7.516z"/>
+          <path fill="#424242" d="M18,13.516C18,14.335,17.335,15,16.516,15H1.484C0.665,15,0,14.335,0,13.516l0,0 c0-0.82,0.665-1.484,1.484-1.484h15.031C17.335,12.031,18,12.696,18,13.516L18,13.516z"/>
+        </svg>
+      </a>
+
+      <div class="trigger">
+        
+          
+          <a class="page-link" href="/blog/about/">About</a>
+          
+        
+          
+        
+          
+        
+          
+        
+      </div>
+    </nav>
+
+  </div>
+
+</header>
+
+
+    <div class="page-content">
+      <div class="wrapper">
+        <div class="post">
+
+  <header class="post-header">
+    <h1 class="post-title">Python Qt and Coroutines</h1>
+    <p class="post-meta">Mar 7, 2015</p>
+  </header>
+
+  <article class="post-content">
+    <h2 id="introduction">Introduction</h2>
+
+<p>When running tasks asynchronously often you find youself in a web of callback
+handlers. This blog entry tries to explore the idea of using python generators
+as coroutines to solve this using python 2.7.</p>
+
+<h3 id="an-example-of-the-problem-we-want-to-solve">An example of the problem we want to solve</h3>
+
+<div class="highlight"><pre><code class="language-python" data-lang="python"><span class="k">def</span> <span class="nf">handle_click</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="c"># done callback</span>
+    <span class="k">def</span> <span class="nf">done</span><span class="p">(</span><span class="n">result</span><span class="p">):</span>
+        <span class="c"># notify the parent thread we have  a result</span>
+        <span class="c"># emit a qt signal with a QueuedConnection so we can</span>
+        <span class="c"># handle the result in the GUI thread</span>
+        <span class="k">pass</span>
+    <span class="c"># Do some async work like a web request or a file load.</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">start_async_work</span><span class="p">(</span><span class="n">on_done</span><span class="o">=</span><span class="n">done</span><span class="p">)</span></code></pre></div>
+
+<p>This code is hard to read, hard to write and hard to maintain. Testing this
+is not very trivial. This example also has no exception handling whatsoever.</p>
+
+<p>This looks like a mess already and I even left out all the plumbing needed to have
+a slot on the GUI thread to handle the result.</p>
+
+<h3 id="wouldnt-this-be-cool">Wouldn’t this be cool?</h3>
+
+<div class="highlight"><pre><code class="language-python" data-lang="python"><span class="nd">@coroutine</span>
+<span class="k">def</span> <span class="nf">handle_click</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="n">task1</span> <span class="o">=</span> <span class="n">AsyncTask</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">worker</span><span class="p">,</span> <span class="mi">66</span><span class="p">)</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">val1</span> <span class="o">=</span> <span class="k">yield</span> <span class="n">task1</span>
+        <span class="c"># add result to a text box, or some other operation that</span>
+        <span class="c"># needs to be done on the GUI thread. In this example we</span>
+        <span class="c"># just print</span>
+        <span class="k">print</span><span class="p">(</span><span class="s">&quot;task1 returned: {0}&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">val1</span><span class="p">))</span>
+    <span class="k">except</span> <span class="n">ASyncException</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+        <span class="k">print</span><span class="p">(</span><span class="s">&quot;Async task failed with {0}&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="nb">repr</span><span class="p">(</span><span class="n">e</span><span class="p">)))</span></code></pre></div>
+
+<p>(hint: yes)</p>
+
+<p>We can give an <code>ASyncTask</code> a callable, <code>*args</code> and <code>**kwargs</code>. When constructing
+a new task it will fire off a <code>QThread</code> that runs this callable immediately in the
+background and returns quickly.</p>
+
+<p>Then we use <code>yield</code> to suspend this coroutine and to pass the, now running, task
+to the coroutine decorator code. This decorator is responsible for registering
+a callback on the task and to send results from the task back to us in the
+coroutine. We need the results to be sent in on the GUI thread as well. And to
+make matters really interesing it may not block the GUI thread.</p>
+
+<p>If we can manage this we get very natural sequential looking code that is easy to
+ready, write and maintain, and all this while it’s not blocking the GUI thread.</p>
+
+<h2 id="whats-out-there-already">What’s out there already</h2>
+
+<p>I have seen the presentations of <a href="http://www.dabeaz.com/">David Beazley</a> which really inspired me to
+pursue this solution. Here I’ve seen some usage of python 3’s <code>Future</code> and got
+a peek at python 3’s <code>asyncio</code>.</p>
+
+<p>This ActiveState <a href="http://code.activestate.com/recipes/578634-pyqt-pyside-thread-safe-callbacks-main-loop-integr/">recipe</a> provides a very neat way of communicating with
+a parent thread using a custom <a href="http://doc.qt.io/qt-5/qevent.html">QEvent</a> and <code>QtGui.QApplication.postEvent</code>
+to post it back to the parent on the GUI thread.
+We will be using its <code>CallbackEvent</code> class to get callbacks from async tasks
+back on our GUI thread.</p>
+
+<p>A <a href="http://stackoverflow.com/questions/24689800/async-like-pattern-in-pyqt-or-cleaner-background-call-pattern">Stackoverflow</a> post that offers a very similar solution to what I had in
+mind. I used it as a basis and improved it with a lot of comments and corner
+case handling like exceptions in worker thread propagation to coroutine among
+various other additions.</p>
+
+<p>I am also inspired by C# <a href="https://msdn.microsoft.com/en-us/library/hh156528.aspx">async and await</a> keywords.</p>
+
+<h2 id="the-asynctask-class">The ASyncTask class</h2>
+
+<p>Simplified version of the <code>ASyncTask</code>. Refer to the code for the complete thing.</p>
+
+<div class="highlight"><pre><code class="language-python" data-lang="python"><span class="k">class</span> <span class="nc">AsyncTask</span><span class="p">(</span><span class="n">QtCore</span><span class="o">.</span><span class="n">QObject</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">func</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="c"># ...</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">finished_callback</span> <span class="o">=</span> <span class="bp">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_worker_thread</span> <span class="o">=</span> <span class="n">RunThreadCallback</span><span class="p">(</span>
+            <span class="bp">self</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">func</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">on_finished</span><span class="p">,</span> <span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="bp">self</span><span class="o">.</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_worker_thread</span><span class="o">.</span><span class="n">start</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">customEvent</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">event</span><span class="p">):</span>
+        <span class="c"># ... checking event type</span>
+        <span class="n">event</span><span class="o">.</span><span class="n">callback</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">on_finished</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">result</span><span class="p">):</span>
+        <span class="c"># ... called from GUI thread</span>
+        <span class="n">func</span> <span class="o">=</span> <span class="n">partial</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">finished_callback</span><span class="p">,</span> <span class="n">result</span><span class="p">)</span>
+        <span class="n">QTimer</span><span class="o">.</span><span class="n">singleShot</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">func</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_worker_thread</span><span class="o">.</span><span class="n">quit</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_worker_thread</span><span class="o">.</span><span class="n">wait</span><span class="p">()</span></code></pre></div>
+
+<p>At this point it is important to understand that we can provide this class with
+a function and arguments which it will run on our behalf in a <code>QThread</code>. When the
+<code>QThread</code> is done the <code>finished_callback</code> we gave it will be run on the GUI thread.</p>
+
+<p>The <code>RunThreadCallback</code> is a <code>QThread</code> that uses <code>CallbackEvent</code> from the ActiveState
+<a href="http://code.activestate.com/recipes/578634-pyqt-pyside-thread-safe-callbacks-main-loop-integr/">recipe</a> to have the callback run on the GUI thread. This alone is great already, but we
+can do more, buckle up!</p>
+
+<h2 id="coroutine-decorator-aka-the-magic">Coroutine Decorator a.k.a. The Magic</h2>
+
+<p>This decorator can only be used on functions that use the <code>yield AsyncTask</code> pattern.</p>
+
+<p>The <code>execute</code> function defined in the decorator will get <code>AsyncTask</code> objects
+from the decorated generator function and register <code>execute</code> itself again to be
+called when the task is complete. It will also explicitly call
+the finished handler if the task is already complete when it’s yielded.</p>
+
+<h3 id="gory-details">Gory details</h3>
+
+<div class="highlight"><pre><code class="language-python" data-lang="python"><span class="k">def</span> <span class="nf">coroutine</span><span class="p">(</span><span class="n">func</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">wrapper</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="k">def</span> <span class="nf">execute</span><span class="p">(</span><span class="n">gen</span><span class="p">,</span> <span class="n">input_</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">gen</span><span class="p">,</span> <span class="n">types</span><span class="o">.</span><span class="n">GeneratorType</span><span class="p">):</span></code></pre></div>
+
+<p>Lets go over this <code>execute</code> function. This function can be a bit tricky to wrap
+your head around. Notice that it has an optional <code>input_</code>
+argument. This argument changes the behavior drastically.</p>
+
+<p>When no input is given, we will make the coroutine advance to the first yield
+and recieve an <code>AsyncTask</code> from it.</p>
+
+<div class="highlight"><pre><code class="language-python" data-lang="python"><span class="c"># no input given</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="n">input_</span><span class="p">:</span>
+                    <span class="c"># the co routine yields an AsyncTask</span>
+                    <span class="n">task</span> <span class="o">=</span> <span class="nb">next</span><span class="p">(</span><span class="n">gen</span><span class="p">)</span></code></pre></div>
+
+<p>On the other hand when <code>input_</code> is given the input holds
+the result of our <code>ASyncTask</code> (more on how this works this
+in a sec, get ready for a blown mind). This result can either
+be an <code>Exception</code> type or the actual result from the task.
+In the case of an exception we rethow it as an <code>ASyncException</code>
+in the decorated generator, where it will be raised
+on the yield statement. In the other case when we do get a
+successful result we send it into the decorated generator
+which then continues execution. This will result in either
+a <code>StopIteration</code> or a new yielded <code>ASyncTask</code>.</p>
+
+<div class="highlight"><pre><code class="language-python" data-lang="python"><span class="c"># input_ given</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="k">try</span><span class="p">:</span>
+                        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">input_</span><span class="p">,</span> <span class="ne">Exception</span><span class="p">):</span>
+                            <span class="n">task</span> <span class="o">=</span> <span class="n">gen</span><span class="o">.</span><span class="n">throw</span><span class="p">(</span><span class="n">ASyncException</span><span class="p">,</span> <span class="n">input_</span><span class="p">)</span>
+                        <span class="k">else</span><span class="p">:</span>
+                            <span class="n">task</span> <span class="o">=</span> <span class="n">gen</span><span class="o">.</span><span class="n">send</span><span class="p">(</span><span class="n">input_</span><span class="p">)</span>
+                    <span class="k">except</span> <span class="ne">StopIteration</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+                        <span class="k">return</span></code></pre></div>
+
+<p>Recap, no <code>input_</code> given advances to the first yield and <code>input_</code> given
+sends (or throws) results into the decorated generator, making it
+continue after the yield giving us the next yielded task or
+a <code>StopIteration</code>.</p>
+
+<p>In either case (when we got input or not) the decorated generator
+has yielded an <code>ASyncTask</code>. This task is given a <code>finished_callback</code> that
+consists of, and this is where minds get blown if they weren’t
+already, a partial function that is made up of ourselves (<code>execute</code>)
+and the decorated generator as first argument. When its called by the
+task the second argument will be the tasks result.</p>
+
+<div class="highlight"><pre><code class="language-python" data-lang="python"><span class="c"># In either case we get a task from the coroutine</span>
+                <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">task</span><span class="p">,</span> <span class="n">AsyncTask</span><span class="p">):</span>
+                    <span class="c"># the partial `func(*a, **kw)` calls `execute(gen, *a, **kw)`</span>
+                    <span class="n">partial_func</span> <span class="o">=</span> <span class="n">partial</span><span class="p">(</span><span class="n">execute</span><span class="p">,</span> <span class="n">gen</span><span class="p">)</span>
+                    <span class="n">task</span><span class="o">.</span><span class="n">finished_callback</span> <span class="o">=</span> <span class="n">partial_func</span>
+                    <span class="k">if</span> <span class="n">task</span><span class="o">.</span><span class="n">finished</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">task</span><span class="o">.</span><span class="n">finished_cb_ran</span><span class="p">:</span>
+                        <span class="c"># explicitly call if the task is already finished</span>
+                        <span class="n">task</span><span class="o">.</span><span class="n">on_finished</span><span class="p">(</span><span class="n">task</span><span class="o">.</span><span class="n">result</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s">&quot;Using yield is only supported with AsyncTasks.&quot;</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="c"># obviously, this must not happen</span>
+                <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s">&quot;Head Asplode.&quot;</span><span class="p">)</span></code></pre></div>
+
+<p>Pause for a minute and think about this.</p>
+
+<p>Realize that this <code>finished_callback</code> has our generator and that the <code>execute</code> function
+returns quickly after setting the callback resuming Qt’s normal event loop.</p>
+
+<p>So what happens when the task calls the <code>finished_callback</code>? It
+calls the partial with the tasks result. This is equivalent to:
+<code>execute(gen, the_tasks_result</code>), this is important to realize to be
+able to understand why we can yield multiple times.</p>
+
+<p>If you go to the full code and look for where the <code>finished_callback</code> is called from.
+You can see it is called
+from the <code>on_finished</code> callback of the custom callback event on the
+<code>ASyncTask</code>. This means that we (the <code>execute</code> function) get called on the
+GUI thread by Qt’s event dispatching! This time with the optional <code>input_</code> argument and of
+course the generator. This happens to be exactly what we need to continue the coroutine where it
+got suspended on the yield. Because we have the <code>input_</code> argument, this <code>execute</code> call will now
+send or throw the result. Both send and throw on a generator
+returns the next yielded task. And this new task eventually makes Qt call us (the <code>execute</code> function) with
+<code>input_</code> again and so the chain continues until a <code>StopIteration</code> is thrown,
+ie. no more tasks are yielded from the coroutine.</p>
+
+<p>How is that for some flow control bending!? (did I mention minds as well?)</p>
+
+<p>Lastly we have this piece of decorator code that is actually called when the decorated function is called.
+For example as a result of a button click.</p>
+
+<div class="highlight"><pre><code class="language-python" data-lang="python"><span class="c">#</span>
+        <span class="c"># when Qt calls this wrapper function, `func` holds</span>
+        <span class="c"># the decorated function. When called it returns our</span>
+        <span class="c"># coroutine as a generator and it doesn&#39;t execute anything yet.</span>
+        <span class="n">generator</span> <span class="o">=</span> <span class="n">func</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="c"># Then execute is called without input_ argument so the coroutine</span>
+        <span class="c"># will advance to the first yield and it also registers `execute`</span>
+        <span class="c"># itself as a callback on task so we get called *again*, but this</span>
+        <span class="c"># time with an input_ argument (the task result).</span>
+        <span class="n">execute</span><span class="p">(</span><span class="n">generator</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">wrapper</span></code></pre></div>
+
+<p>To recap (again, to try to wrap heads around this), we get called without
+<code>input_</code> once as a result of a call to the decorated generator. For
+example as a connected slot on a clicked signal of a button.</p>
+
+<p>We get called with <code>input_</code> by Qt via the <code>CallbackEvent</code> after the task
+is done running. The beauty of this is ofcourse that this allows us to
+continue the coroutine on the GUI thread!</p>
+
+<p><em>NB</em>
+When the decorated generator continues it can either yield
+another task or return in which case it raises <code>StopIteration</code>. Be careful
+when you fire up multiple tasks before yielding them, in this case you have
+to make sure to wrap each yield in their own try except block.</p>
+
+<h2 id="conclusion-and-future">Conclusion and Future</h2>
+
+<p>Chaining coroutines is not trivial without python 3’s <code>yield from</code>. It can probably be
+done, but I will have to think about it some more. I’m not sure if it will be worth the effort.</p>
+
+<p>The way I propagate the <code>Exceptions</code> is not good enough, we loose all stacktrace information.
+This needs to be improved before I consider using this code. Without it, it is near to
+impossible to debug any unexpected exceptions.</p>
+
+<p>Another question I have not answered here is how to write unit test for both the
+coroutine framework itself and also the decorated coroutines.</p>
+
+<p>Check out the <a href="https://github.com/daniel5gh/">GitHub</a>s for codes.</p>
+
+
+  </article>
+
+</div>
+
+      </div>
+    </div>
+
+    <footer class="site-footer">
+
+  <div class="wrapper">
+
+    <h2 class="footer-heading">Daniël's lab.</h2>
+
+    <div class="footer-col-wrapper">
+      <div class="footer-col  footer-col-1">
+        <ul class="contact-list">
+          <li>Daniël's lab.</li>
+          <li><a href="mailto:daniel5blog@spiet.nl">daniel5blog@spiet.nl</a></li>
+        </ul>
+      </div>
+
+      <div class="footer-col  footer-col-2">
+        <ul class="social-media-list">
+          
+
+          
+        </ul>
+      </div>
+
+      <div class="footer-col  footer-col-3">
+        <p class="text">Blog about all kinds of (code) experiments.
+</p>
+      </div>
+    </div>
+
+  </div>
+
+</footer>
+
+
+  </body>
+
+</html>
