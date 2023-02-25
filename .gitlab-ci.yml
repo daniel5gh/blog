@@ -15,9 +15,8 @@ test:
   artifacts:
     paths:
       - test
-  except:
-    variables:
-      - $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+  rules:
+    - if: $CI_COMMIT_BRANCH != $CI_DEFAULT_BRANCH || $CI_COMMIT_TAG
 
 build:
   stage: deploy
@@ -26,9 +25,8 @@ build:
   artifacts:
     paths:
       - blog
-  only:
-    variables:
-      - $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+  rules:
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH || $CI_COMMIT_TAG
 
 release_job:
   stage: deploy
