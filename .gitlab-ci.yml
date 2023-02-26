@@ -27,7 +27,7 @@ build:
     - bundle install
     - bundle exec jekyll build -d blog
     - tar cjvf "$TARBAL_FILENAME" ./blog
-    - echo "DOWNLOAD_LINK=$CI_JOB_URL/artifacts/file/$TARBAL_FILENAME" >> download.env
+    - echo "DOWNLOAD_LINK=$CI_JOB_URL/artifacts/raw/$TARBAL_FILENAME?inline=false" >> download.env
     - cat download.env
   artifacts:
     paths:
