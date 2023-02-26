@@ -9,9 +9,9 @@ setvars:
   script:
     - |
       if [[ -n $CI_COMMIT_TAG ]]; then
-        echo "VERSION=$CI_COMMIT_TAG"
+        echo "VERSION=$CI_COMMIT_TAG" >> version.env
       else
-        echo "VERSION=$CI_COMMIT_REF_SLUG"
+        echo "VERSION=$CI_COMMIT_REF_SLUG-$CI_COMMIT_SHORT_SHA" >> version.env
       fi
   artifacts:
     reports:
