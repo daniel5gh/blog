@@ -5,7 +5,7 @@ date:   2014-12-02 22:16:20
 categories: blog
 ---
 
-Log of random experimentations.
+Log of random experimentation.
 
 {% highlight python %}
 def get_random():

@@ -7,7 +7,7 @@ categories: python generator qt
 
 ## Introduction
 
-When running tasks asynchronously often you find youself in a web of callback
+When running tasks asynchronously often you find yourself in a web of callback
 handlers. This blog entry tries to explore the idea of using python generators
 as coroutines to solve this using python 2.7.
 
@@ -53,7 +53,7 @@ We can give an `ASyncTask` a callable, `*args` and `**kwargs`. When constructing
 a new task it will fire off a `QThread` that runs this callable immediately in the
 background and returns quickly.
 
-Then we use `yield` to suspend this coroutine and to pass the, now running, task
+Then we use `yield` to suspend this coroutine and to pass the now running task
 to the coroutine decorator code. This decorator is responsible for registering
 a callback on the task and to send results from the task back to us in the
 coroutine. We need the results to be sent in on the GUI thread as well. And to
@@ -132,12 +132,12 @@ def coroutine(func):
             if isinstance(gen, types.GeneratorType):
 {% endhighlight %}
 
-Lets go over this `execute` function. This function can be a bit tricky to wrap
+Let's go over this `execute` function. This function can be a bit tricky to wrap
 your head around. Notice that it has an optional `input_`
 argument. This argument changes the behavior drastically.
 
 When no input is given, we will make the coroutine advance to the first yield
-and recieve an `AsyncTask` from it.
+and receive an `AsyncTask` from it.
 
 {% highlight python %}
                 # no input given
@@ -150,7 +150,7 @@ On the other hand when `input_` is given the input holds
 the result of our `ASyncTask` (more on how this works this
 in a sec, get ready for a blown mind). This result can either
 be an `Exception` type or the actual result from the task.
-In the case of an exception we rethow it as an `ASyncException`
+In the case of an exception we rethrow it as an `ASyncException`
 in the decorated generator, where it will be raised
 on the yield statement. In the other case when we do get a
 successful result we send it into the decorated generator
@@ -178,7 +178,7 @@ In either case (when we got input or not) the decorated generator
 has yielded an `ASyncTask`. This task is given a `finished_callback` that
 consists of, and this is where minds get blown if they weren't
 already, a partial function that is made up of ourselves (`execute`)
-and the decorated generator as first argument. When its called by the
+and the decorated generator as first argument. When it's called by the
 task the second argument will be the tasks result.
 
 {% highlight python %}
@@ -217,7 +217,7 @@ got suspended on the yield. Because we have the `input_` argument, this `execute
 send or throw the result. Both send and throw on a generator
 returns the next yielded task. And this new task eventually makes Qt call us (the `execute` function) with
 `input_` again and so the chain continues until a `StopIteration` is thrown,
-ie. no more tasks are yielded from the coroutine.
+i.e. no more tasks are yielded from the coroutine.
 
 How is that for some flow control bending!? (did I mention minds as well?)
 
@@ -228,11 +228,11 @@ For example as a result of a button click.
         #
         # when Qt calls this wrapper function, `func` holds
         # the decorated function. When called it returns our
-        # coroutine as a generator and it doesn't execute anything yet.
+        # coroutine as a generator, and it doesn't execute anything yet.
         generator = func(*args, **kwargs)
         # Then execute is called without input_ argument so the coroutine
         # will advance to the first yield and it also registers `execute`
-        # itself as a callback on task so we get called *again*, but this
+        # itself as a callback on task, so we get called *again*, but this
         # time with an input_ argument (the task result).
         execute(generator)
     return wrapper

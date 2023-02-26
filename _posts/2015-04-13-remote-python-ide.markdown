@@ -11,10 +11,10 @@ Often I create a VM specifically for one project. This way I don't have to worry
 about messing up common dependencies between projects, such as libraries and
 services like a database and webserver.
 
-What I don't like to do is to setup my personal development preferences on each
-VM, plus the VM is slower than the host so I want to run PyCharm or IntelliJ on
+What I don't like to do is to set up my personal development preferences on each
+VM, plus the VM is slower than the host, so I want to run PyCharm or IntelliJ on
 my host machine, even when the host is running another OS than what we're
-developping for. Note that the free variant of PyCharm does not support this.
+developing for. Note that the free variant of PyCharm does not support this.
 
 Here I will describe the typical tasks I perform to get a new project up and
 running.
@@ -29,7 +29,7 @@ want to work on python stuff. We want to be able to SSH to the machine as well.
 
 Next I fix default locales, because I choose Netherlands as location during
 ubuntu install. I found out the hard way that PostgreSQL ubuntu debs fail on a
-postinst step where it tries to create a new cluster. But the installation
+`postinst` step where it tries to create a new cluster. But the installation
 itself does not fail! Automated deployment systems happily continue with the
 missing cluster and fail at a later stage when the database is assumed to be up
 and running.
@@ -40,9 +40,9 @@ Lastly I paste my public ssh key into `~/.ssh/authorized_keys`.
 
 ### Creating the virtualenv
 
-From this point we can operate the VM using SSH only and we can log out of the
-GUI and work from our fast host. Currently I am working on Windows and I am
-using PuTTY for SSH. I used PuTTYgen to create a SSH key pair and Pageant as the
+From this point we can operate the VM using SSH only, and we can log out of the
+GUI and work from our fast host. Currently, I am working on Windows, and I am
+using PuTTY for SSH. I used `PuTTYgen` to create an SSH key pair and Pageant as the
 SSH agent that holds my keys.
 
 {% highlight bash %}
@@ -54,7 +54,7 @@ Installing setuptools, pip...done.
 
 Because we used ubuntu's `virtualenvwrapper` we have a virtualenv that has a
 too old `pip`. We want the newest one mostly because of Python Wheels support.
-Lets update it to latest:
+Let's update it to latest:
 
 {% highlight bash %}
 (remotepyenv)daniel@remotepy:~$ pip install --upgrade pip
@@ -80,9 +80,9 @@ Create a new project and when selecting your SDK choose `Add remote`.
 
 ![Add remote SDK]({{ site.baseurl }}/images/add-remote.png "Add remote SDK")
 
-Next we get a nice dialog to setup SSH credentials and the python executable
-path. For the python path I do a `which python` on the still open putty session
-so I can copy paste the path. Like a good programmer I am lazy and let the
+Next we get a nice dialog to set up SSH credentials and the python executable
+path. For the python path I do a `which python` on the still open putty session,
+so I can copy and paste the path. Like a good programmer I am lazy and let the
 computer do work for me, also less likely to give a wrong path.
 
 ![Add remote SSH]({{ site.baseurl }}/images/add-remote-ssh.png "Add remote SSH Dialog")

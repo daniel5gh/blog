@@ -8,8 +8,8 @@ categories: python generator
 ## Introduction
 
 When you need to process a large amount of data, chaining [python generators][1]
-is a nice way to setup processing pipelines. Advantage of this method are
-that you have fine grained control over memory usage and it provides an
+is a nice way to set up processing pipelines. Advantage of this method are
+that you have fine-grained control over memory usage, and it provides an
 easy way of defining the pipelines.
 
 At the end of this post we can define pipelines as follows:
@@ -25,7 +25,7 @@ pijp = [
 
 ## The codes
 
-Lets walk through the different parts of the code. It is assumed you are
+Let's walk through the different parts of the code. It is assumed you are
 familiar with [python generators][1].
 
 We start with importing `csv` and `itertools`. The `itertools` module is
@@ -72,7 +72,7 @@ Out[4]: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
 
 Debug printing is usually very annoying an inefficient, but we all do it
 from time to time right? In any case it makes a nice example for a
-processing node that as [side-effect][2] has a output to `stdout`.
+processing node that as [side-effect][2] has an output to `stdout`.
 
 {% highlight python %}
 def debug_node(data):
@@ -107,8 +107,8 @@ Out[10]: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
 ### A node to split an iterable into chunks
 
 When inserting data into a database it is efficient to do this multiple
-rows at a time. Lets make a node that makes chunks of size 3. Larger
-chunks are more realistic, but for demostration purpose we use a small
+rows at a time. Let's make a node that makes chunks of size 3. Larger
+chunks are more realistic, but for demonstration purpose we use a small
 size. 
 
 {% highlight python %}
@@ -244,7 +244,7 @@ Now we have some nodes, we need to have a way to chain them all together.
 The following method does that by accepting a list of nodes and a source
 iterable. The source is passed to the first generator in the nodes list. The 
 generator returned by the first node is then passed as an argument to the next
-node and so on until there are no more nodes in the list. Finally the generator
+node and so on until there are no more nodes in the list. Finally, the generator
 returned by the last node is returned. Iterating this last generator sets the
 whole pipeline in motion.
 
