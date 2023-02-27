@@ -28,7 +28,7 @@ had issues. There have been some serious security issues, [some](https://www.rap
 [them](https://duckduckgo.com/?q=gitlab+CVE+RCE&ia=web) allowing RCE and GitLab has
 become quite popular so people are actively hunting for vulnerable instances.
 
-The Omnibus docker container I was running had a volume bind mount. To move the intance, all I
+The Omnibus docker container I was running had a volume bind mount. To move the instance, all I
 did was stopping the container on the source machine. I was then using `rsync` transferring
 everything over to the target machine, both the contents of the persistent volumes and the
 `docker-compose.yml`.
