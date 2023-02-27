@@ -114,19 +114,21 @@ I like to keep track of which versions I have been running and I think this is a
 I changed from using a copy of `gitlab.rb` in favor of `GITLAB_OMNIBUS_CONFIG` environment because
 configuring through environment variables is much more flexible. One mistake I made which did take me
 a while to figure out was that I had an equals sign in `external_url = 'https://git.example.com'` and
-that caused gitlab to not configure itself properly behind the HTTPS reverse proxy. I didn't notice 
+that caused gitlab to not configure itself properly behind the HTTPS reverse proxy. I didn't notice
 any errors and that `external_url` line appeared to be ignored. Gitlab was able to figure out the hostname
 I would guess using `X-Forwarded` or `Host` headers, but it thought it was on `http`.
 
-Symptoms were that the clone url op repo pages used `http://`, gitlab runners failing to pull properly
+Symptoms were that the clone url on repo pages used `http://`, gitlab runners failing to pull properly
 and the releases API thoroughly confusing `release-cli`. All that even though there is an HTTP redirect
-returned, but I remember there was [something with PUT and POST while redirects are in play](https://softwareengineering.stackexchange.com/questions/99894/why-doesnt-http-have-post-redirect). 
+returned, but I remember there
+was [something with PUT and POST while redirects are in play](https://softwareengineering.stackexchange.com/questions/99894/why-doesnt-http-have-post-redirect)
+.
 Wish I had saved the specific error messages, because I did find some people having the same issues,
 but nobody had posted a cause or solution.
 
 For a few days I did workaround some issues by explicitly specifying the *Custom Git clone URL for HTTP(S)*
 in the global admin settings. I knew this was not a proper fix, but I was stuck. While this did let me
-get past the gitlab running pulling issue, the `release-cli` was not using the same environment
+get past the gitlab runner's pulling issue, the `release-cli` was not using the same environment
 vars that are used for cloning.
 
 The mounted volumes are all on a ZFS dataset which I created with:
@@ -191,14 +193,15 @@ Since I locked down this GitLab instance from the public, I decided I want to mi
 public repos to GitHub to still have them be available.
 
 This was easy to set up. I followed [the instructions](https://docs.gitlab.com/ee/user/project/repository/mirror/push.html#set-up-a-push-mirror-from-gitlab-to-github)
-from the gitlab docs.
+from the GitLab docs.
 
 Firstly I created target repo on GitHub and a **Personal Access Token** on the [developer settings](https://github.com/settings/tokens?type=beta)
 section. I chose to the new *fine-grained* option. The options I selected are:
 
- * Only select repositories and I selected the newly created `daniel5gh/blog` repo 
- * Read and Write Contents
- * Read Only Metadata (selected by default and mandatory)
+* **Only select repositories** and I selected the newly created `daniel5gh/blog` repo and I will add others to this as
+  needed
+* **Read and Write Contents**
+* **Read Only Metadata** (selected by default and mandatory)
 
 Selected a lifetime, generated the token and stored it in a secure location. 
 
@@ -252,7 +255,7 @@ in all subsequents stages and jobs. The `dotenv` report artifact is responsible 
 loading these variables in those jobs.
 
 When the length of string `CI_COMMIT_TAG` is non-zero, it means this pipeline runs
-after a git tag has been created. In this case I want to `VERSION` to be that tag name.
+after a git tag has been created. In this case I want the `VERSION` to be that tag name.
 A git ref can have multiple tags, I don't know what the contents of `CI_COMMIT_TAG` is
 in that case, maybe space separated tags. I'm willing to take this risk and I will be
 sure to quote any usage of `VERSION`.
@@ -321,7 +324,7 @@ release_job:
 
 The release job uses the `release-cli` command line tool. I followed the instructions on the
 GitLab [documentation](https://docs.gitlab.com/ee/user/project/releases/release_cicd_examples.html)
-on how to use the `release` and the only thing that was missing was how to get the link to an artifact
+on how to use the `release` and the only thing that was missing there was how to get the link to an artifact
 built in a prior job of this pipeline. I chose to store the link to the download in an environment
 variable at `DOWNLOAD_LINK` and this seems to work out fine.
 
@@ -340,4 +343,5 @@ from a cron job on the target box could also work, but is a bit lame I think.
 Other ideas for topics include some research and maybe implementation of a commenting system. I
 want the blog te remain a static HTML site, so that'll be interesting. And I am also working
 again on a tower defense game, this time using [Bevy Engine](https://bevyengine.org) in rust
-and I want to share my learnings on Entity Component Systems which I think are super cool.
+and I want to share my learnings on Entity Component Systems which I think are super cool. For
+The game I'll also be using AI art generation and maybe ChatGPT to help me with some story elements!
