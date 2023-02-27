@@ -226,7 +226,7 @@ Jekyll is a ruby project, so we select this image as the main image for the jobs
 `docker.io` usually is omitted, but I have configured `podman` to not have any `unqualified-search-registries`
 (in `/etc/containers/registries.conf`) so I need to be specific. It was required
 to add `allowed_images = ["docker.io/*:*", "registry.gitlab.com/gitlab-org/*:*"]` to the
-gitlab running config files.
+gitlab runner config files.
 
 ```yaml
 variables:
