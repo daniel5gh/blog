@@ -1,9 +1,16 @@
 ---
-layout: post
+layout: single
 title:  "Reviving the Blog"
 date:   2023-02-26 00:00:00
 categories: blog
 tags: git gitlab github ci/cd nginx zfs podman docker
+toc: true
+toc_label: "TOC"
+toc_icon: "cog"
+header:
+image: /assets/images/2023-02-26/header.jpg
+teaser: /assets/images/2023-02-26/header.jpg
+
 ---
 
 ## Introduction

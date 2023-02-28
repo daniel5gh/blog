@@ -1,8 +1,9 @@
 ---
-layout: post
+layout: single
 title:  "Data pipelines with python generators"
 date:   2015-01-15 00:00:00
-categories: python generator
+categories: coding
+tags: python generator data
 ---
 
 ## Introduction
@@ -14,14 +15,14 @@ easy way of defining the pipelines.
 
 At the end of this post we can define pipelines as follows:
 
-{% highlight python %}
+```python
 pijp = [
-    open_file_node(mode='rt', encoding='utf8'),
-    parse_csv_node,
-    make_upper_node,
-    print_line_node,
+   open_file_node(mode='rt', encoding='utf8'),
+   parse_csv_node,
+   make_upper_node,
+   print_line_node,
 ]
-{% endhighlight %}
+```
 
 ## The codes
 
@@ -32,12 +33,12 @@ We start with importing `csv` and `itertools`. The `itertools` module is
 not used in the example code included in this post, but it provides some
 very nice utilities. 
 
-{% highlight python %}
+```python
 import csv
 import itertools
 
 __author__ = 'daniel'
-{% endhighlight %}
+```
 
 ### A basic processing node
 
@@ -47,89 +48,113 @@ implementing a No Operation node to demonstrate the simplest node.
 The generator iterates over the input data and yields each item 
 unmodified.
 
-{% highlight python %}
+```python
 def null_node(data):
-    """Does nothing, a null operation.
+   """Does nothing, a null operation.
 
-    :param data: Any iterable
-    :type data: iterable
-    :return: the input
-    :rtype: generator
-    """
-    for datum in data:
-        yield datum
-{% endhighlight %}
+   :param data: Any iterable
+   :type data: iterable
+   :return: the input
+   :rtype: generator
+   """
+   for datum in data:
+      yield datum
+```
 
 Running this:
 
-{% highlight python %}
-In [3]: null_node(range(10))
-Out[3]: <generator object null_node at 0x1227d20>
+```python
+In[3]: null_node(range(10))
+Out[3]: < generator
+object
+null_node
+at
+0x1227d20 >
 
-In [4]: list(_)
+In[4]: list(_)
 Out[4]: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
-{% endhighlight %}
+```
 
 Debug printing is usually very annoying an inefficient, but we all do it
 from time to time right? In any case it makes a nice example for a
 processing node that as [side-effect][2] has an output to `stdout`.
 
-{% highlight python %}
+```python
 def debug_node(data):
-    """Print input and output. Yield unmodified.
+   """Print input and output. Yield unmodified.
 
-    :param data:
-    :return:
-    """
-    for datum in data:
-        print("{0} yielded {1}".format(data, datum))
-        yield datum
-{% endhighlight %}
+   :param data:
+   :return:
+   """
+   for datum in data:
+      print("{0} yielded {1}".format(data, datum))
+      yield datum
+```
 
 Running this:
 
-{% highlight python %}
-In [10]: list(debug_node(range(10)))
-[0, 1, 2, 3, 4, 5, 6, 7, 8, 9] yielded 0
-[0, 1, 2, 3, 4, 5, 6, 7, 8, 9] yielded 1
-[0, 1, 2, 3, 4, 5, 6, 7, 8, 9] yielded 2
-[0, 1, 2, 3, 4, 5, 6, 7, 8, 9] yielded 3
-[0, 1, 2, 3, 4, 5, 6, 7, 8, 9] yielded 4
-[0, 1, 2, 3, 4, 5, 6, 7, 8, 9] yielded 5
-[0, 1, 2, 3, 4, 5, 6, 7, 8, 9] yielded 6
-[0, 1, 2, 3, 4, 5, 6, 7, 8, 9] yielded 7
-[0, 1, 2, 3, 4, 5, 6, 7, 8, 9] yielded 8
-[0, 1, 2, 3, 4, 5, 6, 7, 8, 9] yielded 9
+```python
+In[10]: list(debug_node(range(10)))
+[0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+yielded
+0
+[0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+yielded
+1
+[0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+yielded
+2
+[0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+yielded
+3
+[0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+yielded
+4
+[0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+yielded
+5
+[0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+yielded
+6
+[0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+yielded
+7
+[0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+yielded
+8
+[0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+yielded
+9
 Out[10]: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
 
-{% endhighlight %}
+```
 
 ### A node to split an iterable into chunks
 
 When inserting data into a database it is efficient to do this multiple
 rows at a time. Let's make a node that makes chunks of size 3. Larger
 chunks are more realistic, but for demonstration purpose we use a small
-size. 
+size.
 
-{% highlight python %}
+```python
 def chunk_gen(data):
-    data = iter(data)  # so we can pass in any iterator or sequence and `next()` it
-    chunk = []
-    try:
-        while True:
-            for i in range(3):
-                chunk.append(next(data))
-            yield chunk
-            chunk.clear()
-    except StopIteration:
-        if chunk:
-            yield chunk
-{% endhighlight %}
+   data = iter(data)  # so we can pass in any iterator or sequence and `next()` it
+   chunk = []
+   try:
+      while True:
+         for i in range(3):
+            chunk.append(next(data))
+         yield chunk
+         chunk.clear()
+   except StopIteration:
+      if chunk:
+         yield chunk
+```
 
-{% highlight python %}
-In [19]: list(chunk_gen(range(10)))
+```python
+In[19]: list(chunk_gen(range(10)))
 Out[19]: [[0, 1, 2], [3, 4, 5], [6, 7, 8], [9]]
-{% endhighlight %}
+```
 
 ### Static config values on a node
 
@@ -139,18 +164,18 @@ work, passing configuration values to the constructor and a method for the
 actual generator. I haven't tried this, another option is to take advantage
 of [closures][3]:
 
-{% highlight python %}
+```python
 def make_chunks_node(size=100):
-    """Chunks the data stream.
+   """Chunks the data stream.
 
-    With size of 2: (1,2,3,4,5) -> ((1,2),(3,4),(5))
-    Example of a node that reduces data.
+   With size of 2: (1,2,3,4,5) -> ((1,2),(3,4),(5))
+   Example of a node that reduces data.
 
-    Useful for database inserts.
-    :param size: Chunk size
-    :return:
-    :rtype: generator
-    """
+   Useful for database inserts.
+   :param size: Chunk size
+   :return:
+   :rtype: generator
+   """
 
     # we love closures, use it to store size
 
@@ -164,42 +189,43 @@ def make_chunks_node(size=100):
                 yield chunk
                 chunk.clear()
         except StopIteration:
-            if chunk:
-                yield chunk
+           if chunk:
+              yield chunk
 
-    return chunk_gen
-{% endhighlight %}
+   return chunk_gen
+```
 
 This allows us to make the following construction, we pass the config
 value to the method that returns the actual generator:
-    
-{% highlight python %}
-In [35]: gen = make_chunks_node(2)
 
-In [36]: list(gen(range(10)))
+```python
+In[35]: gen = make_chunks_node(2)
+
+In[36]: list(gen(range(10)))
 Out[36]: [[0, 1], [2, 3], [4, 5], [6, 7], [8, 9]]
-{% endhighlight %}
+```
 
 ### More nodes
 
 Other examples of nodes are:
 
- * `open_file_node`, takes an iterable of filenames and yields file-like objects
+* `open_file_node`, takes an iterable of filenames and yields file-like objects
  * `parse_csv_node`, takes an iterable of text lines and yields data rows
  * `make_upper_node`, takes an iterable of iterables and yields lists for each
    inner iterable with their items uppercased
  * `print_line_node`, same as debug node without printing the source
 
-{% highlight python %}
+```python
 def open_file_node(mode='r', encoding=None):
-    """Opens given file names given on input and yields file like objects
-    """
+   """Opens given file names given on input and yields file like objects
+   """
 
-    def gen_open_file_node(file_names):
-        for fn in file_names:
-            with open(fn, mode=mode, encoding=encoding) as fo:
-                yield fo
-    return gen_open_file_node
+   def gen_open_file_node(file_names):
+      for fn in file_names:
+         with open(fn, mode=mode, encoding=encoding) as fo:
+            yield fo
+
+   return gen_open_file_node
 
 
 def parse_csv_node(csv_data):
@@ -236,7 +262,7 @@ def print_line_node(lines):
     for line in lines:
         print(line)
         yield line
-{% endhighlight %}
+```
 
 ## Chaining generators
 
@@ -248,56 +274,56 @@ node and so on until there are no more nodes in the list. Finally, the generator
 returned by the last node is returned. Iterating this last generator sets the
 whole pipeline in motion.
 
-{% highlight python %}
+```python
 def make_pipe(source, nodes):
-    """Chain all nodes and return the last
+   """Chain all nodes and return the last
 
-    Make a combined generator where the source is passed to
-    the first generator in nodes. The generator returned by it
-    is then passed on the the next node, etc.
+   Make a combined generator where the source is passed to
+   the first generator in nodes. The generator returned by it
+   is then passed on the the next node, etc.
 
-    :param source:
-    :param nodes:
-    :return: combined, chained generator
-    :rtype: generator
-    """
+   :param source:
+   :param nodes:
+   :return: combined, chained generator
+   :rtype: generator
+   """
     gen = source
     for node in nodes:
         gen = node(gen)
     return gen
-{% endhighlight %}
+```
 
 ## Defining pipelines
 
 Putting it all together we get something like this:
 
-{% highlight python %}
+```python
 if __name__ == '__main__':
-    # define pipeline
-    pijp = [
-        make_chunks_node(10),
-        print_line_node,
-    ]
-    # make a pipe generator
-    pipe = make_pipe(range(100), pijp)
-    # consume all
-    list(pipe)
+   # define pipeline
+   pijp = [
+      make_chunks_node(10),
+      print_line_node,
+   ]
+   # make a pipe generator
+   pipe = make_pipe(range(100), pijp)
+   # consume all
+   list(pipe)
 
     pijp = [
         debug_node,
         open_file_node(mode='rt', encoding='utf8'),
         debug_node,
-        parse_csv_node,
-        debug_node,
-        make_upper_node,
-        debug_node,
-        print_line_node,
+       parse_csv_node,
+       debug_node,
+       make_upper_node,
+       debug_node,
+       print_line_node,
     ]
 
-    list(make_pipe(['test1.csv', 'test2.csv'], pijp))
-{% endhighlight %}
+   list(make_pipe(['test1.csv', 'test2.csv'], pijp))
+```
 
-{% highlight python %}
+```python
 [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
 [10, 11, 12, 13, 14, 15, 16, 17, 18, 19]
 [20, 21, 22, 23, 24, 25, 26, 27, 28, 29]
@@ -323,7 +349,7 @@ if __name__ == '__main__':
 <generator object make_upper_node at 0x0000000003D29F30> yielded ['HEADER3', 'HEADER4']
 ['HEADER3', 'HEADER4']
 ...
-{% endhighlight %}
+```
 
 ## Conclusion and Future
 

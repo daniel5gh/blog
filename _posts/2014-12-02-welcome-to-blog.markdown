@@ -1,5 +1,5 @@
 ---
-layout: post
+layout: single
 title:  "Welcome to Blog."
 date:   2014-12-02 22:16:20
 categories: blog
@@ -7,10 +7,10 @@ categories: blog
 
 Log of random experimentation.
 
-{% highlight python %}
+```python
 def get_random():
     return 4
-{% endhighlight %}
+```
 
 Check out the [GitHub][daniel-gh]s for codes.
 

@@ -1,8 +1,9 @@
 ---
-layout: post
+layout: single
 title:  "Python Qt and Coroutines"
 date:   2015-03-07 00:00:00
-categories: python generator qt
+categories: coding
+tags: python generator qt
 ---
 
 ## Introduction
@@ -13,7 +14,7 @@ as coroutines to solve this using python 2.7.
 
 ### An example of the problem we want to solve
 
-{% highlight python %}
+```python
 def handle_click(self):
     # done callback
     def done(result):
@@ -21,9 +22,10 @@ def handle_click(self):
         # emit a qt signal with a QueuedConnection so we can
         # handle the result in the GUI thread
         pass
+
     # Do some async work like a web request or a file load.
     self.start_async_work(on_done=done)
-{% endhighlight %}
+```
 
 This code is hard to read, hard to write and hard to maintain. Testing this
 is not very trivial. This example also has no exception handling whatsoever.
@@ -33,7 +35,7 @@ a slot on the GUI thread to handle the result.
 
 ### Wouldn't this be cool?
 
-{% highlight python %}
+```python
 @coroutine
 def handle_click(self):
     task1 = AsyncTask(self.worker, 66)
@@ -45,7 +47,7 @@ def handle_click(self):
         print("task1 returned: {0}".format(val1))
     except ASyncException as e:
         print("Async task failed with {0}".format(repr(e)))
-{% endhighlight %}
+```
 
 (hint: yes)
 
@@ -85,7 +87,7 @@ I am also inspired by C# [async and await][5] keywords.
 
 Simplified version of the `ASyncTask`. Refer to the code for the complete thing.
 
-{% highlight python %}
+```python
 class AsyncTask(QtCore.QObject):
     def __init__(self, func, *args, **kwargs):
         # ...
@@ -104,7 +106,7 @@ class AsyncTask(QtCore.QObject):
         QTimer.singleShot(0, func)
         self._worker_thread.quit()
         self._worker_thread.wait()
-{% endhighlight %}
+```
 
 At this point it is important to understand that we can provide this class with
 a function and arguments which it will run on our behalf in a `QThread`. When the
@@ -125,12 +127,12 @@ the finished handler if the task is already complete when it's yielded.
 
 ### Gory details
 
-{% highlight python %}
+```python
 def coroutine(func):
     def wrapper(*args, **kwargs):
         def execute(gen, input_=None):
             if isinstance(gen, types.GeneratorType):
-{% endhighlight %}
+```
 
 Let's go over this `execute` function. This function can be a bit tricky to wrap
 your head around. Notice that it has an optional `input_`
@@ -139,12 +141,12 @@ argument. This argument changes the behavior drastically.
 When no input is given, we will make the coroutine advance to the first yield
 and receive an `AsyncTask` from it.
 
-{% highlight python %}
+```python
                 # no input given
-                if not input_:
-                    # the co routine yields an AsyncTask
-                    task = next(gen)
-{% endhighlight %}
+if not input_:
+    # the co routine yields an AsyncTask
+    task = next(gen)
+```
 
 On the other hand when `input_` is given the input holds
 the result of our `ASyncTask` (more on how this works this
@@ -157,17 +159,17 @@ successful result we send it into the decorated generator
 which then continues execution. This will result in either
 a `StopIteration` or a new yielded `ASyncTask`.
 
-{% highlight python %}
+```python
                 # input_ given
-                else:
-                    try:
-                        if isinstance(input_, Exception):
-                            task = gen.throw(ASyncException, input_)
-                        else:
-                            task = gen.send(input_)
-                    except StopIteration as e:
-                        return
-{% endhighlight %}
+else:
+try:
+    if isinstance(input_, Exception):
+        task = gen.throw(ASyncException, input_)
+    else:
+        task = gen.send(input_)
+except StopIteration as e:
+    return
+```
 
 Recap, no `input_` given advances to the first yield and `input_` given
 sends (or throws) results into the decorated generator, making it
@@ -181,21 +183,21 @@ already, a partial function that is made up of ourselves (`execute`)
 and the decorated generator as first argument. When it's called by the
 task the second argument will be the tasks result.
 
-{% highlight python %}
+```python
                 # In either case we get a task from the coroutine
-                if isinstance(task, AsyncTask):
-                    # the partial `func(*a, **kw)` calls `execute(gen, *a, **kw)`
-                    partial_func = partial(execute, gen)
-                    task.finished_callback = partial_func
-                    if task.finished and not task.finished_cb_ran:
-                        # explicitly call if the task is already finished
-                        task.on_finished(task.result)
-                else:
-                    raise Exception("Using yield is only supported with AsyncTasks.")
+if isinstance(task, AsyncTask):
+    # the partial `func(*a, **kw)` calls `execute(gen, *a, **kw)`
+    partial_func = partial(execute, gen)
+    task.finished_callback = partial_func
+    if task.finished and not task.finished_cb_ran:
+        # explicitly call if the task is already finished
+        task.on_finished(task.result)
+else:
+    raise Exception("Using yield is only supported with AsyncTasks.")
             else:
                 # obviously, this must not happen
                 raise Exception("Head Asplode.")
-{% endhighlight %}
+```
 
 Pause for a minute and think about this.
 
@@ -224,19 +226,19 @@ How is that for some flow control bending!? (did I mention minds as well?)
 Lastly we have this piece of decorator code that is actually called when the decorated function is called.
 For example as a result of a button click.
 
-{% highlight python %}
+```python
         #
-        # when Qt calls this wrapper function, `func` holds
-        # the decorated function. When called it returns our
-        # coroutine as a generator, and it doesn't execute anything yet.
-        generator = func(*args, **kwargs)
-        # Then execute is called without input_ argument so the coroutine
-        # will advance to the first yield and it also registers `execute`
-        # itself as a callback on task, so we get called *again*, but this
-        # time with an input_ argument (the task result).
-        execute(generator)
+# when Qt calls this wrapper function, `func` holds
+# the decorated function. When called it returns our
+# coroutine as a generator, and it doesn't execute anything yet.
+generator = func(*args, **kwargs)
+# Then execute is called without input_ argument so the coroutine
+# will advance to the first yield and it also registers `execute`
+# itself as a callback on task, so we get called *again*, but this
+# time with an input_ argument (the task result).
+execute(generator)
     return wrapper
-{% endhighlight %}
+```
 
 To recap (again, to try to wrap heads around this), we get called without
 `input_` once as a result of a call to the decorated generator. For

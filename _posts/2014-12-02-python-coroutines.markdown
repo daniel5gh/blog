@@ -1,15 +1,16 @@
 ---
-layout: post
+layout: single
 title:  "Python Coroutines"
 date:   2014-12-02 23:16:20
-categories: python coroutine generator
+categories: coding
+tags: python coroutine generator
 ---
 
 Python Coroutines with generators.
 
-{% highlight python %}
+```python
 # code here.
-{% endhighlight %}
+```
 
 Check out the [GitHub][daniel-gh]s for codes.
 

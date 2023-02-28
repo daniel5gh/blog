@@ -1,8 +1,9 @@
 ---
-layout: post
+layout: single
 title:  "Remote Python with PyCharm/IntelliJ"
 date:   2015-04-13 00:00:00
-categories: python remote ide
+categories: coding
+tags: python remote ide
 ---
 
 ## Introduction
@@ -45,18 +46,18 @@ GUI and work from our fast host. Currently, I am working on Windows, and I am
 using PuTTY for SSH. I used `PuTTYgen` to create an SSH key pair and Pageant as the
 SSH agent that holds my keys.
 
-{% highlight bash %}
+```bash
 daniel@remotepy:~$ mkvirtualenv remotepyenv
 New python executable in remotepyenv/bin/python
 Installing setuptools, pip...done.
 (remotepyenv)daniel@remotepy:~$
-{% endhighlight %}
+```
 
 Because we used ubuntu's `virtualenvwrapper` we have a virtualenv that has a
 too old `pip`. We want the newest one mostly because of Python Wheels support.
 Let's update it to latest:
 
-{% highlight bash %}
+```bash
 (remotepyenv)daniel@remotepy:~$ pip install --upgrade pip
 Downloading/unpacking pip from https://pypi.python.org/packages/py2.py3/p/pip/pip-6.1.1-py2.py3-none-any.whl#md5=172eb5abab25a5e0f7a7b63c7a49378d
   Downloading pip-6.1.1-py2.py3-none-any.whl (1.1MB): 1.1MB downloaded
@@ -66,7 +67,7 @@ Installing collected packages: pip
       Successfully uninstalled pip
 Successfully installed pip
 Cleaning up...
-{% endhighlight %}
+```
 
 
 ### Have the IDE on your host use the remotepyenv
@@ -78,28 +79,31 @@ this too, but the screenshots do not match.
 
 Create a new project and when selecting your SDK choose `Add remote`.
 
-![Add remote SDK]({{ site.baseurl }}/images/add-remote.png "Add remote SDK")
+{% include figure image_path="/assets/images/2015-04-13/add-remote.png" alt="adding remote SDK" caption="Adding remote
+SDK." %}
 
 Next we get a nice dialog to set up SSH credentials and the python executable
 path. For the python path I do a `which python` on the still open putty session,
 so I can copy and paste the path. Like a good programmer I am lazy and let the
 computer do work for me, also less likely to give a wrong path.
 
-![Add remote SSH]({{ site.baseurl }}/images/add-remote-ssh.png "Add remote SSH Dialog")
+{% include figure image_path="/assets/images/2015-04-13/add-remote-ssh.png" alt="Add remote SSH" caption="Add remote
+SSH." %}
 
 Note I chose to use the Key Pair option at auth type. I won't think less of you
 if you choose to use passwords, I really don't! :)
 
-![Connecting]({{ site.baseurl }}/images/remote-python-connecting.png "Connecting")
+{% include figure image_path="/assets/images/2015-04-13/remote-python-connecting.png" alt="Connecting" caption="
+Connecting." %}
 
 Next, it'll say something like 'updating skeletons', let it do its thing. This
 can take some time on remote envs that have a lot of packages installed.
 
 When it's done:
-![SDK]({{ site.baseurl }}/images/remote-env.png "SDK")
+{% include figure image_path="/assets/images/2015-04-13/remote-env.png" alt="SDK" caption="SDK." %}
 
 Remote package management:
-![Packages]({{ site.baseurl }}/images/remote-packages.png "Packages")
+{% include figure image_path="/assets/images/2015-04-13/remote-packages.png" alt="Packages" caption="Packages." %}
 
 ### Share code files on remote and local host
 
@@ -108,28 +112,29 @@ the same code files. We can either share them on Windows and mount it in the VM
 or do it the other way around. Let's share it in Windows and mount it on the
 VM. In Windows share the project folder. And mount it on the VM:
 
-{% highlight bash %}
+```bash
 # will mount it under /run/user/1000/gvfs/smb-share\:server\=windowsbox\,share\=remotepyproject\,user\=daniel/
 daniel@remotepy:~$ gvfs-mount smb://daniel@windowsbox/remotepyproject
-{% endhighlight %}
-
+```
 
 Now in the "Run/Debug configurations" you set the script path and the working
 directory as they are on the remote host:
-![Config]({{ site.baseurl }}/images/debug-config.png "Configuration")
+{% include figure image_path="/assets/images/2015-04-13/debug-config.png" alt="Config" caption="Config." %}
 
 Also edit the path mappings, these will be used during debugging so IntelliJ
 knows where to find files locally.
-![Path Mappings]({{ site.baseurl }}/images/path-mappings.png "Path Mappings")
+{% include figure image_path="/assets/images/2015-04-13/path-mappings.png" alt="Path Mappings" caption="Path Mappings."
+%}
 
 ### Remote Debugging
 
 To do remote debugging, just launch the debug process as you normally would
 with a local interpreter, note the break on NameError and the Variables below.
-![Remote break]({{ site.baseurl }}/images/remote-break.png "Remote Break")
+{% include figure image_path="/assets/images/2015-04-13/remote-break.png" alt="Remote break" caption="Remote break." %}
 
 We can of course also get the IPython prompt on the remote debugged process.
-![remote-debug-prompt]({{ site.baseurl }}/images/remote-debug-prompt.png "remote-debug-prompt")
+{% include figure image_path="/assets/images/2015-04-13/remote-debug-prompt.png" alt="Remote debug prompt" caption="
+Remote debug prompt." %}
 
 ### Conclusion
 
@@ -137,7 +142,3 @@ I don't like the fact that I need to share the code files between the remote
 host and the local host manually. But besides that I very much like this way of
 working. It also works well if you are actually working on a remote machine to
 which you don't have a graphical terminal to run the IDE on.
-
-
-[daniel-gh]:   https://github.com/daniel5gh/
-[1]: http://www.dabeaz.com/
