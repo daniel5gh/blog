@@ -8,9 +8,8 @@ toc: true
 toc_label: "TOC"
 toc_icon: "cog"
 header:
-image: /assets/images/2023-02-26/header.jpg
-teaser: /assets/images/2023-02-26/header.jpg
-
+  image: /assets/images/2023-02-26/header.jpg
+  teaser: /assets/images/2023-02-26/header.jpg
 ---
 
 ## Introduction

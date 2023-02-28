@@ -143,9 +143,9 @@ and receive an `AsyncTask` from it.
 
 ```python
                 # no input given
-if not input_:
-    # the co routine yields an AsyncTask
-    task = next(gen)
+                if not input_:
+                    # the co routine yields an AsyncTask
+                    task = next(gen)
 ```
 
 On the other hand when `input_` is given the input holds
@@ -161,14 +161,14 @@ a `StopIteration` or a new yielded `ASyncTask`.
 
 ```python
                 # input_ given
-else:
-try:
-    if isinstance(input_, Exception):
-        task = gen.throw(ASyncException, input_)
-    else:
-        task = gen.send(input_)
-except StopIteration as e:
-    return
+                else:
+                try:
+                    if isinstance(input_, Exception):
+                        task = gen.throw(ASyncException, input_)
+                    else:
+                        task = gen.send(input_)
+                except StopIteration as e:
+                    return
 ```
 
 Recap, no `input_` given advances to the first yield and `input_` given
@@ -185,18 +185,18 @@ task the second argument will be the tasks result.
 
 ```python
                 # In either case we get a task from the coroutine
-if isinstance(task, AsyncTask):
-    # the partial `func(*a, **kw)` calls `execute(gen, *a, **kw)`
-    partial_func = partial(execute, gen)
-    task.finished_callback = partial_func
-    if task.finished and not task.finished_cb_ran:
-        # explicitly call if the task is already finished
-        task.on_finished(task.result)
-else:
-    raise Exception("Using yield is only supported with AsyncTasks.")
-            else:
-                # obviously, this must not happen
-                raise Exception("Head Asplode.")
+                if isinstance(task, AsyncTask):
+                    # the partial `func(*a, **kw)` calls `execute(gen, *a, **kw)`
+                    partial_func = partial(execute, gen)
+                    task.finished_callback = partial_func
+                    if task.finished and not task.finished_cb_ran:
+                        # explicitly call if the task is already finished
+                        task.on_finished(task.result)
+                else:
+                    raise Exception("Using yield is only supported with AsyncTasks.")
+                            else:
+                                # obviously, this must not happen
+                                raise Exception("Head Asplode.")
 ```
 
 Pause for a minute and think about this.
@@ -228,16 +228,16 @@ For example as a result of a button click.
 
 ```python
         #
-# when Qt calls this wrapper function, `func` holds
-# the decorated function. When called it returns our
-# coroutine as a generator, and it doesn't execute anything yet.
-generator = func(*args, **kwargs)
-# Then execute is called without input_ argument so the coroutine
-# will advance to the first yield and it also registers `execute`
-# itself as a callback on task, so we get called *again*, but this
-# time with an input_ argument (the task result).
-execute(generator)
-    return wrapper
+        # when Qt calls this wrapper function, `func` holds
+        # the decorated function. When called it returns our
+        # coroutine as a generator, and it doesn't execute anything yet.
+        generator = func(*args, **kwargs)
+        # Then execute is called without input_ argument so the coroutine
+        # will advance to the first yield and it also registers `execute`
+        # itself as a callback on task, so we get called *again*, but this
+        # time with an input_ argument (the task result).
+        execute(generator)
+            return wrapper
 ```
 
 To recap (again, to try to wrap heads around this), we get called without
